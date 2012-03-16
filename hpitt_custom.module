@@ -48,13 +48,13 @@ if (($form_id == 'islandora_solr_simple_search_form' AND arg(0) == 'node' AND ar
 
 
 
-dsm(arg(0));
-dsm(arg(1));
-dsm($form);
-dsm($form_state);
-dsm($form_id);
+/* dsm(arg(0)); */
+/* dsm(arg(1)); */
+/* dsm($form); */
+/* dsm($form_state); */
+/* dsm($form_id); */
 
-dsm(arg(4));
+/* dsm(arg(4)); */
 
 }
 
@@ -71,7 +71,7 @@ function hpitt_custom_islandora_solr_simple_search_submit($form, &$form_state) {
 
 $filter_string = '-';
 
-dsm($form_state);
+/* dsm($form_state); */
 $solr_filter = $form_state['values']['solr_filter'];
 
 switch ($solr_filter) {
