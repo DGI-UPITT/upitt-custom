@@ -1,0 +1,154 @@
+<?php
+
+
+function hpitt_custom_form_alter(&$form, &$form_state, $form_id) {
+
+if ($form_id == 'islandora_solr_simple_search_form' OR $form_id == 'islandora_solr_search_block_form') {
+  $default_value = 'all';  
+  
+  // if the form is on node/12 , default to 'Texts'
+  if (arg(0) == 'node' AND arg(1) == 12) {
+    $default_value = 'texts';
+  }
+  
+  
+  $form['solr_filter'] = array(
+    '#type' => 'radios',
+    '#title' => t('Search For'),
+    '#default_value' => $default_value,
+    '#options' => array(
+      'all' => t('All'),
+      'texts' => t('Texts'),
+      'images' => t('Images'),
+      'maps' => t('Maps'),
+      ),
+    '#description' => t('Filter your search results.'),
+    '#weight' => 4,
+  );
+  
+  // add some weight to submit button
+  $form['submit']['#weight'] = 20;
+
+  // replace submit function
+  $form['#submit'][0] = 'hpitt_custom_islandora_solr_simple_search_submit';
+
+}
+
+  /*
+if (($form_id == 'islandora_solr_simple_search_form' AND arg(0) == 'node' AND arg(1) == 12) OR (arg(0) == 'islandora' AND arg(1) == 'solr' AND arg(4) == 'mods_resource_type_ms:"text"')) {
+
+    //unset($form_id['#submit']); 
+
+    
+
+  
+
+}
+*/
+
+
+
+dsm(arg(0));
+dsm(arg(1));
+dsm($form);
+dsm($form_state);
+dsm($form_id);
+
+dsm(arg(4));
+
+}
+
+
+
+
+
+/**
+* islandora solr simple search form submit
+* @param type $form
+* @param type $form_state
+*/
+function hpitt_custom_islandora_solr_simple_search_submit($form, &$form_state) {
+
+$filter_string = '-';
+
+dsm($form_state);
+$solr_filter = $form_state['values']['solr_filter'];
+
+switch ($solr_filter) {
+  case 'texts';
+    // texts
+    $filter_string = 'mods_resource_type_ms:"text"';
+    break;
+  case 'images':
+    // images
+    $filter_string = 'mods_resource_type_ms:"images"';
+    break;
+  case 'maps':
+    // maps
+    break;
+    $filter_string = 'mods_resource_type_ms:"maps"';
+  default:
+    // all
+    break;
+}
+
+
+
+  $form_state['rebuild'] = TRUE;
+  $searchString = $form_state['values']['islandora_simple_search_query'];
+  $searchString = htmlspecialchars(drupal_urlencode($searchString), ENT_QUOTES, 'utf-8', FALSE);
+  $searchString = str_replace('/', '~slsh~', $searchString); //replace the slash so url doesn't break
+
+  $filter_string = htmlspecialchars(drupal_urlencode($filter_string), ENT_QUOTES, 'utf-8', FALSE);
+
+  drupal_goto("islandora/solr/search/$searchString/$filter_string/dismax");
+}
+
+
+
+
+
+/**
+* islandora solr search block form submit
+* @global type $queryClass
+* @param type $form
+* @param type $form_state
+*/
+function hpitt_custom_islandora_solr_search_block_form_submit($form, &$form_state) {
+
+  module_load_include('inc', 'islandora_solr_search', 'includes/common');
+
+  $form_state['rebuild'] = TRUE;
+  global $queryClass;
+
+  $type_id = trim($form_state['values']['type']);
+  $repeat = variable_get('islandora_solr_search_block_repeat', '3');
+  $fedora_terms = array();
+  $types = array();
+  $booleans = array();
+
+  for ($fieldNum = 1; $fieldNum <= $repeat; $fieldNum++) {
+    if ($form_state['values']["fedora_terms$fieldNum"]) {
+      $types[] = trim($form_state['values']["type$fieldNum"]);
+      $fedora_terms[] = lesser_escape(trim($form_state['values']["fedora_terms$fieldNum"]));
+    }
+    $next = $fieldNum + 1;
+    if ($form_state['values']["fedora_terms$next"] && $form_state['values']["fedora_terms$fieldNum"]) {
+      $booleans[] = trim($form_state['values']["andor$fieldNum"]);
+    }
+  }
+
+  for ($iteration = 0; $iteration < count($fedora_terms); $iteration++) {
+    //FIXME (minor): t() should be changed to format_string() in this instance, in Drupal 7
+    // The string isn't really translatable, just templated.
+    $searchString .= t("!field:(!query) !bool ", array(
+        '!field' => $types[$iteration],
+        '!query' => $fedora_terms[$iteration],
+        '!bool' => $booleans[$iteration]
+    ));
+  }
+  $searchString = trim($searchString);
+  $searchString = drupal_urlencode($searchString);
+  $searchString = str_replace('/', '~slsh~', $searchString); //replace the slash so url doesn't break
+  drupal_goto("islandora/solr/search/$searchString/-/-");
+}

@@ -1,0 +1,6 @@
+name = Historic Pittsburgh custom
+dependencies[] = islandora_solr_search
+description = Custom code for Historic Pittsburgh
+package = Custom
+version = 6.x-1.x-dev
+core = 6.x
