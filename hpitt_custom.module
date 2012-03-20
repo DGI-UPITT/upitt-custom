@@ -3,63 +3,50 @@
 
 function hpitt_custom_form_alter(&$form, &$form_state, $form_id) {
 
-if ($form_id == 'islandora_solr_simple_search_form' OR $form_id == 'islandora_solr_search_block_form') {
-  $default_value = 'all';  
-  
-  // if the form is on node/12 , default to 'Texts'
-  if (arg(0) == 'node' AND arg(1) == 12) {
-    $default_value = 'texts';
+  if ($form_id == 'islandora_solr_simple_search_form' OR $form_id == 'islandora_solr_search_block_form') {
+    $default_value = 'all';
+
+    // if the form is on node/12 , default to 'Texts'
+    if (arg(0) == 'node' AND arg(1) == 12) {
+      $default_value = 'text';
+    }
+
+    $form['solr_filter'] = array(
+      '#type' => 'radios',
+      '#title' => t('Search For'),
+      '#default_value' => $default_value,
+      '#options' => array(
+        'all' => t('All'),
+        'text' => t('Texts'),
+        'still image' => t('Images'),
+        'map' => t('Maps'),
+        ),
+      '#description' => t('Filter your search results.'),
+      '#weight' => 4,
+    );
+
+    // add some weight to submit button
+    $form['submit']['#weight'] = 20;
+
+    // replace submit function
+    $form['#submit'][0] = 'hpitt_custom_islandora_solr_simple_search_submit';
+
   }
-  
-  
-  $form['solr_filter'] = array(
-    '#type' => 'radios',
-    '#title' => t('Search For'),
-    '#default_value' => $default_value,
-    '#options' => array(
-      'all' => t('All'),
-      'texts' => t('Texts'),
-      'images' => t('Images'),
-      'maps' => t('Maps'),
-      ),
-    '#description' => t('Filter your search results.'),
-    '#weight' => 4,
-  );
-  
-  // add some weight to submit button
-  $form['submit']['#weight'] = 20;
-
-  // replace submit function
-  $form['#submit'][0] = 'hpitt_custom_islandora_solr_simple_search_submit';
-
-}
 
   /*
-if (($form_id == 'islandora_solr_simple_search_form' AND arg(0) == 'node' AND arg(1) == 12) OR (arg(0) == 'islandora' AND arg(1) == 'solr' AND arg(4) == 'mods_resource_type_ms:"text"')) {
+  if (($form_id == 'islandora_solr_simple_search_form' AND arg(0) == 'node' AND arg(1) == 12) OR (arg(0) == 'islandora' AND arg(1) == 'solr' AND arg(4) == 'mods_resource_type_ms:"text"')) {
+    //unset($form_id['#submit']);
+  }
+  */
 
-    //unset($form_id['#submit']); 
-
-    
-
-  
-
-}
-*/
-
-
-
-/* dsm(arg(0)); */
-/* dsm(arg(1)); */
-/* dsm($form); */
-/* dsm($form_state); */
-/* dsm($form_id); */
-
-/* dsm(arg(4)); */
+  /* dsm(arg(0)); */
+  /* dsm(arg(1)); */
+  /* dsm($form); */
+  /* dsm($form_state); */
+  /* dsm($form_id); */
+  /* dsm(arg(4)); */
 
 }
-
-
-
 
 
 /**
@@ -69,30 +56,24 @@ if (($form_id == 'islandora_solr_simple_search_form' AND arg(0) == 'node' AND ar
 */
 function hpitt_custom_islandora_solr_simple_search_submit($form, &$form_state) {
 
-$filter_string = '-';
+  $filter_string = '-';
 
-/* dsm($form_state); */
-$solr_filter = $form_state['values']['solr_filter'];
+  /* dsm($form_state); */
+  $solr_filter = $form_state['values']['solr_filter'];
 
-switch ($solr_filter) {
-  case 'texts';
-    // texts
-    $filter_string = 'mods_resource_type_ms:"text"';
-    break;
-  case 'images':
-    // images
-    $filter_string = 'mods_resource_type_ms:"images"';
-    break;
-  case 'maps':
-    // maps
-    break;
-    $filter_string = 'mods_resource_type_ms:"maps"';
-  default:
-    // all
-    break;
-}
-
-
+  switch ($solr_filter) {
+    case 'text';
+      // texts
+    case 'still image':
+      // images
+    case 'map':
+      // maps
+      $filter_string = 'mods_resource_type_ms:"' . $solr_filter . '"';
+      break;
+    default:
+      // all - no filter
+      break;
+  }
 
   $form_state['rebuild'] = TRUE;
   $searchString = $form_state['values']['islandora_simple_search_query'];
